@@ -59,7 +59,7 @@ const Calculator = () => {
 
       newInput.onScreen =
         newInput.operator === '+'
-          ? newInput.operand1 + newInput.operand1
+          ? newInput.operand1 + newInput.operand2
           : newInput.operator === '-'
           ? newInput.operand1 - newInput.operand2
           : newInput.operator === '*'
