@@ -11,6 +11,9 @@ const Calculator = () => {
     operand1: '',
     operand2: '',
     operator: '',
+    stage: 'number1',
+
+    // stages - number1, number2, calculated
   };
 
   const initialError = {
@@ -24,64 +27,89 @@ const Calculator = () => {
   const [input, setInput] = useState(initialInput);
   const [error, setError] = useState(initialError);
 
+  const calculate = (num1, num2, operator) => {
+    let result;
+    switch (operator) {
+      case '+':
+        result = num1 + num2;
+        break;
+      case '-':
+        result = num1 - num2;
+        break;
+      case '*':
+        result = num1 * num2;
+        break;
+      case '/':
+        result = num1 / num2;
+        break;
+
+      default:
+        break;
+    }
+    result = Number.isNaN(result) || result === Infinity ? 'Error' : result;
+    return result;
+  };
+
   const handleButtonClick = (value) => {
     const newInput = { ...input };
 
-    // Prevent doing anything if Error on the screen
-    if ((newInput.onScreen === 'Error') & (value !== 'AC')) return;
-
-    // Restore state on AC button
     if (value === 'AC') {
       setInput(initialInput);
       return;
     }
 
-    // Operators events
     if (operands.includes(value)) {
-      if (newInput.operand2) {
+      if (newInput.operand2 && newInput.stage !== 'calculated') {
         setError({
           head: 'Error',
-          message: `You've been already used another operator. Please finish calculation or click AC to restore it.`,
+          message: `You've been already choosen operator. Please finish calculation or click AC to reset.`,
           isError: true,
         });
         return;
       }
+
+      if (newInput.stage === 'calculated') {
+        newInput.operand1 = newInput.onScreen;
+        newInput.operator = value;
+        newInput.operand2 = '';
+        newInput.stage = 'number2';
+        newInput.onScreen += value;
+        setInput(newInput);
+        return;
+      }
+
       newInput.operator = value;
-      newInput.onScreen += value;
+      newInput.stage = 'number2';
+      newInput.onScreen = newInput.operand1 + value;
       setInput(newInput);
       return;
     }
 
-    // Calculation logic
     if (value === '=') {
-      newInput.operand1 = +newInput.operand1;
-      newInput.operand2 = +newInput.operand2;
-
-      newInput.onScreen =
-        newInput.operator === '+'
-          ? newInput.operand1 + newInput.operand2
-          : newInput.operator === '-'
-          ? newInput.operand1 - newInput.operand2
-          : newInput.operator === '*'
-          ? newInput.operand1 * newInput.operand2
-          : newInput.operand1 / newInput.operand2;
-
-      // Devision by 0 and other stuff like that
-      if (newInput.onScreen === Infinity) newInput.onScreen = 'Error';
-
-      // Leave a result of calculation in operand1 to continue calculating
+      if (newInput.stage === 'number1') return;
+      newInput.onScreen = calculate(
+        +newInput.operand1,
+        +newInput.operand2,
+        newInput.operator
+      );
+      newInput.stage = 'calculated';
       newInput.operand1 = newInput.onScreen;
       setInput(newInput);
       return;
     }
 
-    // Entering numbers in Input for operand1 and operand2
-    if (newInput.operator) {
-      if (value === '.' && newInput.operand2.includes('.')) return; // check for double . input
-      newInput.operand2 += value;
-    } else {
-      if (value === '.' && newInput.operand1.includes('.')) return; // check for double . input
+    if (newInput.stage === 'number1') {
+      if (value === '.' && newInput.operand1.includes('.')) return;
       newInput.operand1 += value;
+    }
+
+    if (newInput.stage === 'number2') {
+      if (value === '.' && newInput.operand2.includes('.')) return;
+      newInput.operand2 += value;
+    }
+
+    if (newInput.stage === 'calculated') {
+      return;
     }
 
     newInput.onScreen =
